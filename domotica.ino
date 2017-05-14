@@ -37,27 +37,45 @@
 // RemoteXY configurate   
 #pragma pack(push, 1) 
 uint8_t RemoteXY_CONF[] = 
-  { 255,4,0,0,0,106,0,6,8,0,
-  4,0,87,21,5,28,2,2,0,2,
-  24,16,7,2,79,78,0,79,70,70,
-  0,2,0,28,24,16,7,2,79,78,
-  0,79,70,70,0,2,0,58,24,16,
-  7,2,79,78,0,79,70,70,0,129,
-  0,1,17,97,5,4,76,117,99,105,
-  32,73,110,32,32,32,32,32,32,76,
-  117,99,105,32,79,117,116,32,32,32,
-  32,32,32,32,86,101,110,116,111,108,
-  97,32,32,32,32,32,71,97,114,97,
-  103,101,0 }; 
+  { 255,9,0,0,0,236,0,6,8,1,
+  2,0,44,5,17,8,2,79,78,0,
+  79,70,70,0,2,0,44,15,17,8,
+  2,79,78,0,79,70,70,0,2,0,
+  44,25,17,8,2,79,78,0,79,70,
+  70,0,2,0,44,35,17,8,2,79,
+  78,0,79,70,70,0,1,0,24,85,
+  14,14,1,71,101,110,101,114,97,108,
+  101,0,2,0,44,45,17,8,2,79,
+  78,0,79,70,70,0,2,0,44,55,
+  17,8,2,79,78,0,79,70,70,0,
+  2,0,44,65,17,8,2,79,78,0,
+  79,70,70,0,2,0,44,75,17,8,
+  2,79,78,0,79,70,70,0,129,0,
+  6,7,29,5,5,76,117,99,105,32,
+  73,110,116,101,114,110,101,0,129,0,
+  5,19,31,5,4,76,117,99,105,32,
+  69,115,116,101,114,110,101,0,129,0,
+  7,28,18,5,6,86,101,110,116,111,
+  108,97,0,129,0,6,46,25,5,0,
+  71,97,114,97,103,101,32,83,117,0,
+  129,0,7,37,16,5,1,83,116,101,
+  114,101,111,0,129,0,5,56,27,5,
+  0,71,97,114,97,103,101,32,71,105,
+  195,185,0 }; 
    
 // this structure defines all the variables of your control interface  
-struct { 
+struct _remotexy { 
 
     // input variable
-  int8_t garage_door; // =0..100 slider position 
   uint8_t lights_in; // =1 if switch ON and =0 if OFF 
   uint8_t lights_out; // =1 if switch ON and =0 if OFF 
   uint8_t fan; // =1 if switch ON and =0 if OFF 
+  uint8_t stereo; // =1 if switch ON and =0 if OFF 
+  uint8_t general; // =1 if button pressed, else =0 
+  uint8_t garage_up; // =1 if switch ON and =0 if OFF 
+  uint8_t garage_down; // =1 if switch ON and =0 if OFF 
+  uint8_t rele7; // =1 if switch ON and =0 if OFF 
+  uint8_t rele8; // =1 if switch ON and =0 if OFF 
 
     // other variable
   uint8_t connect_flag;  // =1 if wire connected, else =0 
@@ -69,9 +87,18 @@ struct {
 //           END RemoteXY include          //
 /////////////////////////////////////////////
 
-#define PIN_LIGHTS_IN 4
-#define PIN_LIGHTS_OUT 5
-#define PIN_FAN 6
+#define PIN_LIGHTS_IN 5
+#define PIN_LIGHTS_OUT 6
+#define PIN_FAN 7
+#define PIN_STEREO 8
+#define PIN_GARAGE_UP 9
+#define PIN_GARAGE_DOWN 10
+#define PIN_RELE_7 11
+#define PIN_RELE_8 12
+
+#define VALORE_RELAY_ON LOW
+#define VALORE_RELAY_OFF HIGH
+
 
 
 #define PIN_TEMPERATURE_SENSOR 4
@@ -87,6 +114,19 @@ DHT sensore_temperatura(PIN_TEMPERATURE_SENSOR,DHT11);
 //           FUNZIONI DI UTILITA           //
 /////////////////////////////////////////////
 
+void processa_comandi(struct _remotexy&  cmd) 
+{
+
+  digitalWrite( PIN_LIGHTS_IN, (cmd.lights_in == 1) ?  VALORE_RELAY_ON : VALORE_RELAY_OFF); 
+  digitalWrite( PIN_LIGHTS_OUT, (cmd.lights_out == 1) ?  VALORE_RELAY_ON : VALORE_RELAY_OFF);    
+  digitalWrite( PIN_FAN, (cmd.fan == 1) ?  VALORE_RELAY_ON : VALORE_RELAY_OFF); 
+  digitalWrite( PIN_STEREO, (cmd.stereo == 1) ?  VALORE_RELAY_ON : VALORE_RELAY_OFF); 
+  digitalWrite( PIN_GARAGE_UP, (cmd.garage_up == 1) ?  VALORE_RELAY_ON : VALORE_RELAY_OFF);    
+  digitalWrite( PIN_GARAGE_DOWN, (cmd.garage_down == 1) ?  VALORE_RELAY_ON : VALORE_RELAY_OFF); 
+  digitalWrite( PIN_RELE_7, (cmd.rele7 == 1) ?  VALORE_RELAY_ON : VALORE_RELAY_OFF); 
+  digitalWrite( PIN_RELE_8, (cmd.rele8 == 1) ?  VALORE_RELAY_ON : VALORE_RELAY_OFF);    
+  
+}
 
 // STAMPA MESSAGGIO MESSAGGIO VISUALIZZATO SU LCD
 // Temperatura e Umidita passati da fuori
@@ -115,7 +155,14 @@ void setup()
   pinMode (PIN_LIGHTS_IN, OUTPUT);
   pinMode (PIN_LIGHTS_OUT, OUTPUT);
   pinMode (PIN_FAN, OUTPUT);
+  pinMode (PIN_STEREO, OUTPUT);
+  pinMode (PIN_GARAGE_UP, OUTPUT);
+  pinMode (PIN_GARAGE_DOWN, OUTPUT);
+  pinMode (PIN_RELE_7, OUTPUT);
+  pinMode (PIN_RELE_8, OUTPUT);
 
+  
+  Serial.begin(9600);
   
   // Inizializzazione display LCD e SENSORE TEMPERATURA
   lcd.init();
@@ -126,17 +173,19 @@ void setup()
 
 void loop() 
 { 
+  //legge comandi da bluetooth
   RemoteXY_Handler ();
   
-  digitalWrite(PIN_LIGHTS_IN, (RemoteXY.lights_in==0)?LOW:HIGH);
-  digitalWrite(PIN_LIGHTS_OUT, (RemoteXY.lights_out==0)?LOW:HIGH);
-  digitalWrite(PIN_FAN, (RemoteXY.fan==0)?LOW:HIGH);
+
 
   float temp = sensore_temperatura.readTemperature();
   float hum = sensore_temperatura.readHumidity();
   
-  // TODO you loop code
   // use the RemoteXY structure for data transfer
   aggiorna_lcd(temp,hum);
-  delay(500);
+
+  //processa comandi (aziona relays e pin vari)
+  processa_comandi(RemoteXY);
+
+
 }
