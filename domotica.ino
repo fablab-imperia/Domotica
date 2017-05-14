@@ -34,45 +34,36 @@
 #define REMOTEXY_SERIAL_SPEED 9600
 
 
-// RemoteXY configurate  
-#pragma pack(push, 1)
-uint8_t RemoteXY_CONF[] =
-  { 255,6,0,0,0,174,0,6,8,1,
-  2,0,44,5,16,8,2,79,78,0,
-  79,70,70,0,4,0,49,56,8,28,
-  2,2,0,44,18,17,8,2,79,78,
-  0,79,70,70,0,2,0,44,32,17,
-  8,2,79,78,0,79,70,70,0,2,
-  0,44,45,17,8,2,79,78,0,79,
-  70,70,0,1,0,12,79,17,17,1,
-  71,101,110,101,114,97,108,101,0,129,
-  0,6,7,29,5,5,76,117,99,105,
-  32,73,110,116,101,114,110,101,0,129,
-  0,5,19,31,5,4,76,117,99,105,
-  32,69,115,116,101,114,110,101,0,129,
-  0,11,34,18,5,6,86,101,110,116,
-  111,108,97,0,129,0,2,66,42,5,
-  0,83,101,114,114,97,110,100,97,32,
-  71,97,114,97,103,101,0,129,0,12,
-  47,16,5,1,83,116,101,114,101,111,
-  0 };
-  
-// Variabili che arrivano via bluetooth dall'interfaccia RemoteXY
-struct {
+// RemoteXY configurate   
+#pragma pack(push, 1) 
+uint8_t RemoteXY_CONF[] = 
+  { 255,4,0,0,0,106,0,6,8,0,
+  4,0,87,21,5,28,2,2,0,2,
+  24,16,7,2,79,78,0,79,70,70,
+  0,2,0,28,24,16,7,2,79,78,
+  0,79,70,70,0,2,0,58,24,16,
+  7,2,79,78,0,79,70,70,0,129,
+  0,1,17,97,5,4,76,117,99,105,
+  32,73,110,32,32,32,32,32,32,76,
+  117,99,105,32,79,117,116,32,32,32,
+  32,32,32,32,86,101,110,116,111,108,
+  97,32,32,32,32,32,71,97,114,97,
+  103,101,0 }; 
+   
+// this structure defines all the variables of your control interface  
+struct { 
 
     // input variable
-  uint8_t lights_in; // =1 if switch ON and =0 if OFF 
   int8_t garage_door; // =0..100 slider position 
+  uint8_t lights_in; // =1 if switch ON and =0 if OFF 
   uint8_t lights_out; // =1 if switch ON and =0 if OFF 
   uint8_t fan; // =1 if switch ON and =0 if OFF 
-  uint8_t stereo; // =1 if switch ON and =0 if OFF 
-  uint8_t general; // =1 if button pressed, else =0 
 
     // other variable
   uint8_t connect_flag;  // =1 if wire connected, else =0 
 
-} RemoteXY;
-#pragma pack(pop)
+} RemoteXY; 
+#pragma pack(pop) 
 
 /////////////////////////////////////////////
 //           END RemoteXY include          //
@@ -81,9 +72,9 @@ struct {
 #define PIN_LIGHTS_IN 4
 #define PIN_LIGHTS_OUT 5
 #define PIN_FAN 6
-#define PIN_STEREO 7
 
-#define PIN_TEMPERATURE_SENSOR 2
+
+#define PIN_TEMPERATURE_SENSOR 4
 
 //LCD per mostrare temperatura e messaggi
 LiquidCrystal_I2C lcd(0x3F,16,2);
@@ -124,7 +115,7 @@ void setup()
   pinMode (PIN_LIGHTS_IN, OUTPUT);
   pinMode (PIN_LIGHTS_OUT, OUTPUT);
   pinMode (PIN_FAN, OUTPUT);
-  pinMode (PIN_STEREO, OUTPUT);
+
   
   // Inizializzazione display LCD e SENSORE TEMPERATURA
   lcd.init();
@@ -140,10 +131,12 @@ void loop()
   digitalWrite(PIN_LIGHTS_IN, (RemoteXY.lights_in==0)?LOW:HIGH);
   digitalWrite(PIN_LIGHTS_OUT, (RemoteXY.lights_out==0)?LOW:HIGH);
   digitalWrite(PIN_FAN, (RemoteXY.fan==0)?LOW:HIGH);
-  digitalWrite(PIN_STEREO, (RemoteXY.stereo==0)?LOW:HIGH);
+
+  float temp = sensore_temperatura.readTemperature();
+  float hum = sensore_temperatura.readHumidity();
   
   // TODO you loop code
   // use the RemoteXY structure for data transfer
-
-
+  aggiorna_lcd(temp,hum);
+  delay(500);
 }
