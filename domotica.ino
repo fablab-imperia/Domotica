@@ -35,6 +35,7 @@
 
 
 // RemoteXY configurate   
+// RemoteXY configurate   
 #pragma pack(push, 1) 
 uint8_t RemoteXY_CONF[] = 
   { 255,8,0,22,0,36,1,6,8,1,
@@ -91,6 +92,7 @@ struct _remotexy {
 } RemoteXY; 
 #pragma pack(pop) 
 
+
 /////////////////////////////////////////////
 //           END RemoteXY include          //
 /////////////////////////////////////////////
@@ -100,13 +102,17 @@ struct _remotexy {
 #define PIN_LIGHT_BATH 7
 #define PIN_LIGHT_LIVING 8
 #define PIN_LIGHT_GARDEN 9
-#define PIN_FAN 10
+#define PIN_FAN 12
 #define PIN_GARAGE_UP 11
-#define PIN_GARAGE_DOWN 12
+#define PIN_GARAGE_DOWN 10
+
 
 #define VALORE_RELAY_ON LOW
 #define VALORE_RELAY_OFF HIGH
 
+#define SERRANDA_UP 0
+#define SERRANDA_DOWN 1
+#define TEMPO_AZIONE_MOTORE_SERRANDA_MS 600 
 
 
 #define PIN_TEMPERATURE_SENSOR 4
@@ -116,6 +122,8 @@ LiquidCrystal_I2C lcd(0x3F,16,2);
 
 //Sensore temperatura
 DHT sensore_temperatura(PIN_TEMPERATURE_SENSOR,DHT11);
+
+int posizione_precedente_serranda = SERRANDA_UP;
 
 
 /////////////////////////////////////////////
@@ -127,12 +135,25 @@ void processa_comandi(struct _remotexy&  cmd)
 
   digitalWrite( PIN_LIGHTS_GARAGE, (cmd.lights_garage == 1) ?  VALORE_RELAY_ON : VALORE_RELAY_OFF); 
   digitalWrite( PIN_LIGHTS_BEDROOM, (cmd.lights_bedroom == 1) ?  VALORE_RELAY_ON : VALORE_RELAY_OFF);    
-  digitalWrite( PIN_LIGHT_BATH, (cmd.light_bath == 1) ?  VALORE_RELAY_ON : VALORE_RELAY_OFF); 
+  digitalWrite( PIN_LIGHT_BATH, (cmd.light_bath == 1) ?  VALORE_RELAY_ON: VALORE_RELAY_OFF); 
   digitalWrite( PIN_LIGHT_LIVING, (cmd.light_living == 1) ?  VALORE_RELAY_ON : VALORE_RELAY_OFF); 
   digitalWrite( PIN_LIGHT_GARDEN, (cmd.light_garden == 1) ?  VALORE_RELAY_ON : VALORE_RELAY_OFF); 
   digitalWrite( PIN_FAN, (cmd.fan == 1) ?  VALORE_RELAY_ON : VALORE_RELAY_OFF);    
- // digitalWrite( PIN_GARAGE_UP, (cmd.garage_up == 1) ?  VALORE_RELAY_ON : VALORE_RELAY_OFF);    
- // digitalWrite( PIN_GARAGE_DOWN, (cmd.garage_down == 1) ?  VALORE_RELAY_ON : VALORE_RELAY_OFF);   
+
+  //se  posizione della serranda diversa
+  if (posizione_precedente_serranda != cmd.garage_up_down)
+  {
+    muovi_serranda_garage(cmd.garage_up_down);
+    posizione_precedente_serranda = cmd.garage_up_down;
+  }
+
+  if (cmd.general == 1) 
+  {
+    spegni_tutto();
+  
+  }
+  
+ 
 }
 
 // STAMPA MESSAGGIO MESSAGGIO VISUALIZZATO SU LCD
@@ -153,7 +174,17 @@ void aggiorna_lcd(float temperatura, float umidita)
   lcd.print("%");
 }
 
-
+void spegni_tutto() 
+{
+  digitalWrite (PIN_LIGHTS_GARAGE, VALORE_RELAY_OFF);
+  digitalWrite (PIN_LIGHTS_BEDROOM, VALORE_RELAY_OFF);
+  digitalWrite (PIN_LIGHT_BATH, VALORE_RELAY_OFF);
+  digitalWrite (PIN_LIGHT_LIVING, VALORE_RELAY_OFF);
+  digitalWrite (PIN_LIGHT_GARDEN, VALORE_RELAY_OFF);
+  digitalWrite (PIN_FAN, VALORE_RELAY_OFF);
+  digitalWrite (PIN_GARAGE_UP, VALORE_RELAY_OFF);
+  digitalWrite (PIN_GARAGE_DOWN, VALORE_RELAY_OFF);
+}
 
 void setup() 
 {
@@ -168,6 +199,8 @@ void setup()
   pinMode (PIN_GARAGE_UP, OUTPUT);
   pinMode (PIN_GARAGE_DOWN, OUTPUT);
 
+  //Inizializzo tutti i rele a OFF
+  spegni_tutto();
   
   Serial.begin(9600);
   
@@ -180,7 +213,18 @@ void setup()
 
 void muovi_serranda_garage(int direzione) 
 {
-    
+    if (direzione == SERRANDA_UP) 
+    {
+      digitalWrite(PIN_GARAGE_UP, VALORE_RELAY_ON);
+      delay(TEMPO_AZIONE_MOTORE_SERRANDA_MS);
+      digitalWrite(PIN_GARAGE_UP, VALORE_RELAY_OFF);
+    } 
+    else 
+    {
+      digitalWrite(PIN_GARAGE_DOWN, VALORE_RELAY_ON);
+      delay(TEMPO_AZIONE_MOTORE_SERRANDA_MS);
+      digitalWrite(PIN_GARAGE_DOWN, VALORE_RELAY_OFF);
+    }
 }
 
 void loop() 
