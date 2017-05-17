@@ -238,8 +238,10 @@ void loop()
   float hum = sensore_temperatura.readHumidity();
   String temp_str="";
   temp_str+=temp;
+  temp_str += " C";
   String hum_str="";
   hum_str+=hum;
+  hum_str += " %";
   temp_str.toCharArray(RemoteXY.txt_temp, 11);
   hum_str.toCharArray(RemoteXY.txt_humid, 11);
   // use the RemoteXY structure for data transfer
