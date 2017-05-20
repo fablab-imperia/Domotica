@@ -89,7 +89,9 @@ struct _remotexy {
     // other variable
   uint8_t connect_flag;  // =1 if wire connected, else =0 
 
-} RemoteXY; 
+} RemoteXY, old_remotexy; 
+
+
 #pragma pack(pop) 
 
 
@@ -130,30 +132,67 @@ int posizione_precedente_serranda = SERRANDA_UP;
 //           FUNZIONI DI UTILITA           //
 /////////////////////////////////////////////
 
-void processa_comandi(struct _remotexy&  cmd) 
+//Fai qualcosa solo se il valore ricevuto da bluetooth e' diverso dal precedente
+
+void processa_comandi(struct _remotexy&  old, struct _remotexy&  current) 
 {
 
-  digitalWrite( PIN_LIGHTS_GARAGE, (cmd.lights_garage == 1) ?  VALORE_RELAY_ON : VALORE_RELAY_OFF); 
-  digitalWrite( PIN_LIGHTS_BEDROOM, (cmd.lights_bedroom == 1) ?  VALORE_RELAY_ON : VALORE_RELAY_OFF);    
-  digitalWrite( PIN_LIGHT_BATH, (cmd.light_bath == 1) ?  VALORE_RELAY_ON: VALORE_RELAY_OFF); 
-  digitalWrite( PIN_LIGHT_LIVING, (cmd.light_living == 1) ?  VALORE_RELAY_ON : VALORE_RELAY_OFF); 
-  digitalWrite( PIN_LIGHT_GARDEN, (cmd.light_garden == 1) ?  VALORE_RELAY_ON : VALORE_RELAY_OFF); 
-  digitalWrite( PIN_FAN, (cmd.fan == 1) ?  VALORE_RELAY_ON : VALORE_RELAY_OFF);    
-
-  //se  posizione della serranda diversa
-  if (posizione_precedente_serranda != cmd.garage_up_down)
+  if (current.lights_garage != old.lights_garage) 
   {
-    muovi_serranda_garage(cmd.garage_up_down);
-    posizione_precedente_serranda = cmd.garage_up_down;
+    digitalWrite( PIN_LIGHTS_GARAGE, (current.lights_garage == 1) ?  VALORE_RELAY_ON : VALORE_RELAY_OFF); 
+  }
+  
+  if (current.lights_bedroom != old.lights_bedroom)  
+  {
+    digitalWrite( PIN_LIGHTS_BEDROOM, (current.lights_bedroom == 1) ?  VALORE_RELAY_ON : VALORE_RELAY_OFF);    
+  }
+  
+  if (current.light_bath != old.light_bath)  
+  {
+    digitalWrite( PIN_LIGHT_BATH, (current.light_bath == 1) ?  VALORE_RELAY_ON: VALORE_RELAY_OFF); 
+  }
+  
+  if (current.light_living != old.light_living) 
+  { 
+    digitalWrite( PIN_LIGHT_LIVING, (current.light_living == 1) ?  VALORE_RELAY_ON : VALORE_RELAY_OFF); 
+  }
+    
+  if (current.light_garden != old.light_garden) 
+  {
+    digitalWrite( PIN_LIGHT_GARDEN, (current.light_garden == 1) ?  VALORE_RELAY_ON : VALORE_RELAY_OFF); 
+  }
+  
+  if (current.fan != old.fan) 
+  {
+    digitalWrite( PIN_FAN, (current.fan == 1) ?  VALORE_RELAY_ON : VALORE_RELAY_OFF);    
+  }
+  //se  posizione della serranda diversa
+  if (old.garage_up_down != current.garage_up_down)
+  {
+    muovi_serranda_garage(current.garage_up_down);
   }
 
-  if (cmd.general == 1) 
+  if (current.general != old.general && current.general == 1) 
   {
     spegni_tutto();
   
   }
   
  
+}
+
+
+//Salva i valori correnti ricevuti da bluetooth
+void salva_stato(struct _remotexy& oldRemotexy, struct _remotexy& currentRemotexy) 
+{
+     oldRemotexy.lights_garage = currentRemotexy.lights_garage;
+     oldRemotexy.lights_bedroom = currentRemotexy.lights_bedroom;
+     oldRemotexy.light_bath = currentRemotexy.light_bath;
+     oldRemotexy.light_living = currentRemotexy.light_living; 
+     oldRemotexy.general = currentRemotexy.general;
+     oldRemotexy.light_garden = currentRemotexy.light_garden;
+     oldRemotexy.fan = currentRemotexy.fan;
+     oldRemotexy.garage_up_down = currentRemotexy.garage_up_down; 
 }
 
 // STAMPA MESSAGGIO MESSAGGIO VISUALIZZATO SU LCD
@@ -248,7 +287,8 @@ void loop()
   aggiorna_lcd(temp,hum);
 
   //processa comandi (aziona relays e pin vari)
-  processa_comandi(RemoteXY);
+  processa_comandi(old_remotexy,RemoteXY);
 
+  salva_stato(old_remotexy,RemoteXY);
 
 }
