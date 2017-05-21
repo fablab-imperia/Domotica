@@ -182,7 +182,7 @@ void processa_comandi(struct _remotexy&  old, struct _remotexy&  current)
 }
 
 
-//Salva i valori correnti ricevuti da bluetooth
+//Salva i valori correnti ricevuti da bluetooth in una struttura temporanea
 void salva_stato(struct _remotexy& oldRemotexy, struct _remotexy& currentRemotexy) 
 {
      oldRemotexy.lights_garage = currentRemotexy.lights_garage;
